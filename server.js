@@ -6,6 +6,19 @@ app.use(express.json());
 app.use(cors());
 
 let activeSessions = [];
+const EXPIRATION_TIME = 30 * 60 * 1000; // 30 minutes
+
+// ⏲️ Automatically clean expired sessions every 5 minutes
+setInterval(() => {
+    const currentTime = Date.now();
+    const originalLength = activeSessions.length;
+    activeSessions = activeSessions.filter(session => currentTime - session.timestamp < EXPIRATION_TIME);
+    const removedCount = originalLength - activeSessions.length;
+
+    if (removedCount > 0) {
+        console.log(`🧹 Auto-cleaned ${removedCount} expired session(s) at ${new Date().toISOString()}`);
+    }
+}, 5 * 60 * 1000); // Every 5 minutes
 
 app.get("/api/debugSessions", (req, res) => {
     console.log(`🐛 Debug: Currently ${activeSessions.length} sessions stored.`);
@@ -33,11 +46,9 @@ app.post("/api/addSession", (req, res) => {
 
 app.get("/api/getSessions", (req, res) => {
     const currentTime = Date.now();
-    const expirationTime = 30 * 60 * 1000;
-
-    console.log(`⏳ Before cleanup: ${activeSessions.length} total sessions.`);
-    const validSessions = activeSessions.filter(session => currentTime - session.timestamp < expirationTime);
+    const validSessions = activeSessions.filter(session => currentTime - session.timestamp < EXPIRATION_TIME);
     const removedCount = activeSessions.length - validSessions.length;
+
     console.log(`📉 Removed ${removedCount} expired session(s).`);
     console.log(`📡 Active sessions fetched: ${validSessions.length} valid session(s).`);
 
@@ -52,6 +63,7 @@ app.get("/api/getSessions", (req, res) => {
 
 app.delete("/api/removeSession", (req, res) => {
     const { sessionCode, gameId } = req.query;
+
     if (!sessionCode || !gameId) {
         console.error("❌ Error: Missing sessionCode or gameId in request.");
         return res.status(400).json({ error: "Both sessionCode and gameId are required" });
