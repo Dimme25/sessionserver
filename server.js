@@ -6,7 +6,7 @@ app.use(express.json());
 app.use(cors());
 
 let activeSessions = [];
-const EXPIRATION_TIME = 30 * 60 * 1000; // 30 minutes
+const EXPIRATION_TIME = 12 * 60 * 1000; // 30 minutes
 
 // ⏲️ Automatically clean expired sessions every 5 minutes
 setInterval(() => {
